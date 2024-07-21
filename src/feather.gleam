@@ -41,6 +41,7 @@ pub type Config {
     temp_store: TempStore,
     mmap_size: Option(Int),
     page_size: Option(Int),
+    foreign_keys: Bool,
   )
 }
 
@@ -52,6 +53,7 @@ pub fn default_config() -> Config {
     temp_store: TempStoreMemory,
     mmap_size: None,
     page_size: None,
+    foreign_keys: False,
   )
 }
 
@@ -80,6 +82,8 @@ pub fn with_connection(config: Config, f: fn(Connection) -> a) -> a {
   value
 }
 
+/// Opens a connection to the sqlite database and runs PRAGMA statements
+/// according to the provided config.
 pub fn connect(config: Config) -> Result(Connection, Error) {
   use connection <- result.try(sqlight.open(config.file))
 
@@ -103,6 +107,11 @@ pub fn connect(config: Config) -> Result(Connection, Error) {
     TempStoreFile -> "FILE"
     TempStoreMemory -> "MEMORY"
     TempStoreDefault -> "DEFAULT"
+  }
+
+  let foreign_keys = case config.foreign_keys {
+    True -> "ON"
+    False -> "OFF"
   }
 
   use _ <- result.try(sqlight.exec(
@@ -132,6 +141,11 @@ pub fn connect(config: Config) -> Result(Connection, Error) {
     })
     |> option.unwrap(Ok(Nil)),
   )
+
+  use _ <- result.try(sqlight.exec(
+    "PRAGMA foreign_keys = " <> foreign_keys <> ";",
+    connection,
+  ))
 
   Ok(connection)
 }
