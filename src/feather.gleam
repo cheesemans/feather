@@ -55,6 +55,31 @@ pub fn default_config() -> Config {
   )
 }
 
+/// Open a connection to a SQLite database, execute PRAGMA statements according
+/// to the provided configuration, execute a function with it and finally close
+/// the connection.
+///
+/// This function works well with a `use` expression to automatically close the
+/// connection at the end of a block.
+///
+/// # Crashes
+///
+/// This function crashes if the connection cannot be opened or closed.
+///
+/// # Examples
+///
+/// ```gleam
+/// use conn <- feather.with_connection(feather.default_config())
+/// // Use the connection here...
+/// ```
+///
+pub fn with_connection(config: Config, f: fn(Connection) -> a) -> a {
+  let assert Ok(connection) = connect(config)
+  let value = f(connection)
+  let assert Ok(_) = disconnect(connection)
+  value
+}
+
 pub fn connect(config: Config) -> Result(Connection, Error) {
   use connection <- result.try(sqlight.open(config.file))
 

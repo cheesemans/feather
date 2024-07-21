@@ -27,7 +27,7 @@ import sqlight
 pub fn main() {
   let assert Ok(priv_dir) = erlang.priv_directory("my_module_name")
   use migrations <- result.try(feather.get_migrations(priv_dir <> "/migrations"))
-  use connection <- feather.connect(feather.Config(..feather.default_config(), file: "./database.db"))
+  use connection <- feather.with_connection(feather.Config(..feather.default_config(), file: "./database.db"))
   feather.migrate(migrations, on: connection)
 }
 ```
